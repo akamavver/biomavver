@@ -23,7 +23,7 @@ const images = {{IMAGES}};
 const grid = document.getElementById('grid');
 let items = [];
 const gap = 10;
-const speed = 0.3;
+const speed = window.innerWidth < 600 ? 1.5 : 0.5;
 
 function getColumnCount() {
     const w = window.innerWidth;
@@ -97,21 +97,23 @@ function setupGrid(){
 }
 
 function animateGrid(){
-    const colCount = getColumnCount();
-    const colBottoms = Array(colCount).fill(0);
-
-    items.forEach(div=>{
+    items.forEach(div => {
+        // Достаем текущее значение top
         let top = parseFloat(div.style.top) - speed;
         const height = parseFloat(div.style.height);
         const col = parseInt(div.dataset.col);
 
+        // Если картинка улетела вверх
         if(top + height < 0){
-            const colItems = items.filter(d=>parseInt(d.dataset.col) === col);
-            const maxBottom = colItems.length ? Math.max(...colItems.map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) : 0;
+            const colItems = items.filter(d => parseInt(d.dataset.col) === col);
+            const maxBottom = colItems.length ? Math.max(...colItems.map(d => parseFloat(d.style.top) + parseFloat(d.style.height))) : 0;
             top = maxBottom + gap;
         }
 
         div.style.top = `${top}px`;
+
+        // Добавь эту строку для аппаратного ускорения на телефонах:
+        div.style.transform = 'translateZ(0)';
     });
 
     requestAnimationFrame(animateGrid);
