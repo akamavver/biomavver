@@ -25,7 +25,7 @@ let items = [];
 const gap = 10;
 const speed = 0.3;
 
-function getColumnCount(){
+function getColumnCount() {
     const w = window.innerWidth;
     if(w < 600) return 2;
     if(w < 900) return 3;
@@ -74,8 +74,7 @@ function setupGrid(){
 
             const minCol = colBottoms.indexOf(Math.min(...colBottoms));
             const x = gap + minCol * (colWidth + gap);
-            // стартовые позиции ниже видимой области, чтобы на мобиле сразу двигаются
-            const y = window.innerHeight + Math.random()*100;
+            const y = colBottoms[minCol];
             div.style.left = `${x}px`;
             div.style.top = `${y}px`;
             div.dataset.col = minCol;
@@ -83,9 +82,11 @@ function setupGrid(){
             colBottoms[minCol] += height + gap;
             items.push(div);
 
+            // плавное появление
             setTimeout(()=>{ full.style.opacity = '1'; div.classList.add('loaded'); }, index*50);
 
             loadedCount++;
+            // старт анимации только после загрузки всех картинок
             if(loadedCount === images.length){
                 requestAnimationFrame(animateGrid);
             }
@@ -94,7 +95,9 @@ function setupGrid(){
 }
 
 function animateGrid(){
-    const viewHeight = window.innerHeight;
+    const colCount = getColumnCount();
+    const colBottoms = Array(colCount).fill(0);
+
     items.forEach(div=>{
         let top = parseFloat(div.style.top) - speed;
         const height = parseFloat(div.style.height);
@@ -102,7 +105,7 @@ function animateGrid(){
 
         if(top + height < 0){
             const colItems = items.filter(d=>parseInt(d.dataset.col) === col);
-            const maxBottom = colItems.length ? Math.max(...colItems.map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) : gap;
+            const maxBottom = colItems.length ? Math.max(...colItems.map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) : 0;
             top = maxBottom + gap;
         }
 
@@ -113,11 +116,13 @@ function animateGrid(){
 }
 
 window.addEventListener('load', ()=>{ setupGrid(); });
+
 window.addEventListener('resize', ()=>{
     items.forEach(i=>i.remove());
     items = [];
     setupGrid();
 });
+
 window.addEventListener('orientationchange', ()=>{
     items.forEach(i=>i.remove());
     items = [];
