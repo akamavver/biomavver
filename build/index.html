@@ -25,7 +25,6 @@ let items = [];
 const gap = 10;
 const speed = 0.3;
 
-// --- количество колонок ---
 function getColumnCount(){
     const w = window.innerWidth;
     if(w < 600) return 2;
@@ -34,14 +33,12 @@ function getColumnCount(){
     return 6;
 }
 
-// --- случайная высота ---
 function getRandomHeight(width, ratio){
     const minH = width * ratio * 0.9;
     const maxH = width * ratio * 1.1;
     return minH + Math.random()*(maxH-minH);
 }
 
-// --- сетка ---
 function setupGrid(){
     const colCount = getColumnCount();
     const colWidth = (window.innerWidth - gap*(colCount+1)) / colCount;
@@ -77,7 +74,8 @@ function setupGrid(){
 
             const minCol = colBottoms.indexOf(Math.min(...colBottoms));
             const x = gap + minCol * (colWidth + gap);
-            const y = colBottoms[minCol];
+            // стартовые позиции ниже видимой области, чтобы на мобиле сразу двигаются
+            const y = window.innerHeight + Math.random()*100;
             div.style.left = `${x}px`;
             div.style.top = `${y}px`;
             div.dataset.col = minCol;
@@ -85,11 +83,9 @@ function setupGrid(){
             colBottoms[minCol] += height + gap;
             items.push(div);
 
-            // плавное появление
-            setTimeout(()=>{ full.style.opacity = '1'; div.classList.add('loaded'); }, index*100);
+            setTimeout(()=>{ full.style.opacity = '1'; div.classList.add('loaded'); }, index*50);
 
             loadedCount++;
-            // старт анимации только когда все картинки подгружены
             if(loadedCount === images.length){
                 requestAnimationFrame(animateGrid);
             }
@@ -97,15 +93,14 @@ function setupGrid(){
     });
 }
 
-// --- анимация ---
 function animateGrid(){
+    const viewHeight = window.innerHeight;
     items.forEach(div=>{
         let top = parseFloat(div.style.top) - speed;
         const height = parseFloat(div.style.height);
         const col = parseInt(div.dataset.col);
 
         if(top + height < 0){
-            // возвращаем в колонку с ровным отступом
             const colItems = items.filter(d=>parseInt(d.dataset.col) === col);
             const maxBottom = colItems.length ? Math.max(...colItems.map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) : gap;
             top = maxBottom + gap;
@@ -117,12 +112,7 @@ function animateGrid(){
     requestAnimationFrame(animateGrid);
 }
 
-// --- запуск ---
-window.addEventListener('load', ()=>{
-    setupGrid();
-});
-
-// --- ресайз и поворот ---
+window.addEventListener('load', ()=>{ setupGrid(); });
 window.addEventListener('resize', ()=>{
     items.forEach(i=>i.remove());
     items = [];
