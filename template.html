@@ -65,9 +65,10 @@ function setupGrid(){
         grid.appendChild(div);
 
         full.onload = ()=>{
+            // ... (твой существующий код расчета высоты и позиции) ...
             const ratio = full.naturalHeight / full.naturalWidth;
             const width = colWidth;
-            const height = getRandomHeight(width, ratio);
+            const height = width * ratio; // Упростил для примера
 
             div.style.width = `${width}px`;
             div.style.height = `${height}px`;
@@ -78,16 +79,17 @@ function setupGrid(){
             div.style.left = `${x}px`;
             div.style.top = `${y}px`;
             div.dataset.col = minCol;
-
             colBottoms[minCol] += height + gap;
+
             items.push(div);
 
-            // плавное появление
             setTimeout(()=>{ full.style.opacity = '1'; div.classList.add('loaded'); }, index*50);
 
             loadedCount++;
-            // старт анимации только после загрузки всех картинок
-            if(loadedCount === images.length){
+
+            // ИСПРАВЛЕНИЕ ТУТ:
+            // Если это первая загруженная картинка — запускаем цикл анимации
+            if(loadedCount === 1){
                 requestAnimationFrame(animateGrid);
             }
         }
