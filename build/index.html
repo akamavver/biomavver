@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Mavver</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="hero-wrapper">
+    <div class="hero-grid" id="grid"></div>
+    <div class="hero-overlay"></div>
+
+    <div class="bio-content">
+        <h1>это страница маввера</h1>
+        <p>это реально очень классный чувак</p>
+    </div>
+</div>
+
+<script>
+const images = ["img_0.jpg", "img_1.jpg", "img_2.jpg", "img_3.jpg", "img_4.jpg", "img_5.jpg", "img_6.jpg", "img_7.jpg", "img_8.jpg", "img_9.jpg", "img_10.jpg", "img_11.jpg", "img_12.jpg", "img_13.jpg", "img_14.jpg", "img_15.jpg", "img_16.jpg", "img_17.jpg", "img_18.jpg", "img_19.jpg", "img_20.jpg", "img_21.jpg", "img_22.jpg", "img_23.jpg", "img_24.jpg", "img_25.jpg", "img_26.jpg", "img_27.jpg", "img_28.jpg", "img_29.jpg", "img_30.jpg", "img_31.jpg", "img_32.jpg", "img_33.jpg", "img_34.jpg", "img_35.jpg", "img_36.jpg", "img_37.jpg", "img_38.jpg", "img_39.jpg", "img_40.jpg", "img_41.jpg", "img_42.jpg", "img_43.jpg", "img_44.jpg", "img_45.jpg", "img_46.jpg", "img_47.jpg", "img_48.jpg", "img_49.jpg", "img_50.jpg", "img_51.jpg", "img_52.jpg", "img_53.jpg", "img_54.jpg", "img_55.jpg", "img_56.jpg", "img_57.jpg", "img_58.jpg", "img_59.jpg", "img_60.jpg", "img_61.jpg", "img_62.jpg", "img_63.jpg", "img_64.jpg", "img_65.jpg", "img_66.jpg", "img_67.jpg", "img_68.jpg"];
+const grid = document.getElementById('grid');
+let items = [];
+const gap = 10;
+
+function getColumnCount(){
+    const w = window.innerWidth;
+    if(w < 600) return 2;
+    if(w < 900) return 3;
+    if(w < 1200) return 4;
+    return 6;
+}
+
+function getRandomHeight(width, ratio){
+    const minH = width * ratio * 0.9;
+    const maxH = width * ratio * 1.1;
+    return minH + Math.random()*(maxH-minH);
+}
+
+function setupGrid(){
+    const colCount = getColumnCount();
+    const colWidth = (grid.clientWidth - gap*(colCount+1)) / colCount; // учитываем отступы слева/справа
+    const colBottoms = Array(colCount).fill(gap); // отступ сверху
+
+    images.sort(()=>Math.random()-0.5).forEach((src)=>{
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        const blur = document.createElement('img');
+        blur.src = `blur/${src}`;
+        blur.className = 'blur';
+
+        const full = document.createElement('img');
+        full.src = `assets/${src}`;
+        full.className = 'full';
+
+        div.appendChild(blur);
+        div.appendChild(full);
+
+        div.style.position = 'absolute';
+        grid.appendChild(div);
+
+        full.onload = ()=>{
+            const ratio = full.naturalHeight / full.naturalWidth;
+            const width = colWidth;
+            const height = getRandomHeight(width, ratio);
+
+            div.style.width = `${width}px`;
+            div.style.height = `${height}px`;
+
+            const minCol = colBottoms.indexOf(Math.min(...colBottoms));
+            const x = gap + minCol * (colWidth + gap); // + gap слева
+            const y = colBottoms[minCol];
+            div.style.left = `${x}px`;
+            div.style.top = `${y}px`;
+
+            colBottoms[minCol] += height + gap; // + gap снизу
+            items.push(div);
+
+            div.classList.add('loaded');
+        }
+    });
+}
+
+let speed = 0.3;
+
+function animateGrid(){
+    items.forEach(div=>{
+        let top = parseFloat(div.style.top) - speed;
+        const height = parseFloat(div.style.height);
+        const col = Math.round((parseFloat(div.style.left) - gap) / (parseFloat(div.style.width) + gap));
+
+        if(top + height < 0){
+            // возвращаем вниз с ровным отступом
+            top = Math.max(...items.filter(d=>parseInt(d.dataset.col) === col).map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) + gap || gap;
+        }
+        div.style.top = `${top}px`;
+        div.dataset.col = col;
+    });
+
+    requestAnimationFrame(animateGrid);
+}
+
+setupGrid();
+window.addEventListener('resize', ()=>{
+    items.forEach(i=>i.remove());
+    items = [];
+    setupGrid();
+});
+
+animateGrid();
+</script>
+</body>
+</html>
