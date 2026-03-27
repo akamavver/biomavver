@@ -23,7 +23,9 @@ const images = ["img_0.jpg", "img_1.jpg", "img_2.jpg", "img_3.jpg", "img_4.jpg",
 const grid = document.getElementById('grid');
 let items = [];
 const gap = 10;
+const speed = 0.3;
 
+// --- количество колонок ---
 function getColumnCount(){
     const w = window.innerWidth;
     if(w < 600) return 2;
@@ -32,18 +34,22 @@ function getColumnCount(){
     return 6;
 }
 
+// --- случайная высота ---
 function getRandomHeight(width, ratio){
     const minH = width * ratio * 0.9;
     const maxH = width * ratio * 1.1;
     return minH + Math.random()*(maxH-minH);
 }
 
+// --- сетка ---
 function setupGrid(){
     const colCount = getColumnCount();
-    const colWidth = (window.innerWidth - gap*(colCount+1)) / colCount; // мобила
+    const colWidth = (window.innerWidth - gap*(colCount+1)) / colCount;
     const colBottoms = Array(colCount).fill(gap);
 
-    images.sort(()=>Math.random()-0.5).forEach((src)=>{
+    let loadedCount = 0;
+
+    images.sort(()=>Math.random()-0.5).forEach((src, index)=>{
         const div = document.createElement('div');
         div.className = 'item';
 
@@ -54,10 +60,10 @@ function setupGrid(){
         const full = document.createElement('img');
         full.src = `assets/${src}`;
         full.className = 'full';
+        full.style.opacity = '0';
 
         div.appendChild(blur);
         div.appendChild(full);
-
         div.style.position = 'absolute';
         grid.appendChild(div);
 
@@ -74,18 +80,24 @@ function setupGrid(){
             const y = colBottoms[minCol];
             div.style.left = `${x}px`;
             div.style.top = `${y}px`;
+            div.dataset.col = minCol;
 
             colBottoms[minCol] += height + gap;
-            div.dataset.col = minCol;
             items.push(div);
 
-            div.classList.add('loaded');
+            // плавное появление
+            setTimeout(()=>{ full.style.opacity = '1'; div.classList.add('loaded'); }, index*100);
+
+            loadedCount++;
+            // старт анимации только когда все картинки подгружены
+            if(loadedCount === images.length){
+                requestAnimationFrame(animateGrid);
+            }
         }
     });
 }
 
-let speed = 0.3;
-
+// --- анимация ---
 function animateGrid(){
     items.forEach(div=>{
         let top = parseFloat(div.style.top) - speed;
@@ -93,6 +105,7 @@ function animateGrid(){
         const col = parseInt(div.dataset.col);
 
         if(top + height < 0){
+            // возвращаем в колонку с ровным отступом
             const colItems = items.filter(d=>parseInt(d.dataset.col) === col);
             const maxBottom = colItems.length ? Math.max(...colItems.map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) : gap;
             top = maxBottom + gap;
@@ -104,13 +117,12 @@ function animateGrid(){
     requestAnimationFrame(animateGrid);
 }
 
-// --- Ждём полной загрузки ---
+// --- запуск ---
 window.addEventListener('load', ()=>{
     setupGrid();
-    animateGrid();
 });
 
-// --- обновление при ресайзе и повороте ---
+// --- ресайз и поворот ---
 window.addEventListener('resize', ()=>{
     items.forEach(i=>i.remove());
     items = [];
