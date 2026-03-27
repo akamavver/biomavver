@@ -23,7 +23,12 @@ const images = {{IMAGES}};
 const grid = document.getElementById('grid');
 let items = [];
 const gap = 10;
-const speed = window.innerWidth < 600 ? 1.5 : 0.5;
+// Базовая скорость (пикселей в секунду).
+// На мобилках сделаем чуть быстрее, чтобы ощущалось бодрее.
+const speed = window.innerWidth < 600 ? 120 : 80;
+
+let lastTime = 0;
+let isAnimating = false;
 
 function getColumnCount() {
     const w = window.innerWidth;
@@ -33,22 +38,20 @@ function getColumnCount() {
     return 6;
 }
 
-function getRandomHeight(width, ratio){
-    const minH = width * ratio * 0.9;
-    const maxH = width * ratio * 1.1;
-    return minH + Math.random()*(maxH-minH);
-}
-
 function setupGrid(){
     const colCount = getColumnCount();
-    const colWidth = (window.innerWidth - gap*(colCount+1)) / colCount;
+    const colWidth = (window.innerWidth - gap * (colCount + 1)) / colCount;
     const colBottoms = Array(colCount).fill(gap);
 
     let loadedCount = 0;
 
-    images.sort(()=>Math.random()-0.5).forEach((src, index)=>{
+    // Сортируем и создаем элементы
+    images.sort(() => Math.random() - 0.5).forEach((src, index) => {
         const div = document.createElement('div');
         div.className = 'item';
+        div.style.position = 'absolute';
+        div.style.width = `${colWidth}px`;
+        div.style.willChange = 'transform'; // Оптимизация для GPU
 
         const blur = document.createElement('img');
         blur.src = `blur/${src}`;
@@ -61,76 +64,77 @@ function setupGrid(){
 
         div.appendChild(blur);
         div.appendChild(full);
-        div.style.position = 'absolute';
         grid.appendChild(div);
 
-        full.onload = ()=>{
-            // ... (твой существующий код расчета высоты и позиции) ...
+        full.onload = () => {
             const ratio = full.naturalHeight / full.naturalWidth;
-            const width = colWidth;
-            const height = width * ratio; // Упростил для примера
-
-            div.style.width = `${width}px`;
+            const height = colWidth * ratio;
             div.style.height = `${height}px`;
 
             const minCol = colBottoms.indexOf(Math.min(...colBottoms));
             const x = gap + minCol * (colWidth + gap);
             const y = colBottoms[minCol];
-            div.style.left = `${x}px`;
-            div.style.top = `${y}px`;
-            div.dataset.col = minCol;
-            colBottoms[minCol] += height + gap;
 
+            // Сохраняем координаты в dataset для расчетов
+            div.dataset.y = y;
+            div.dataset.x = x;
+            div.dataset.col = minCol;
+
+            // Устанавливаем начальную позицию
+            div.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+
+            colBottoms[minCol] += height + gap;
             items.push(div);
 
-            setTimeout(()=>{ full.style.opacity = '1'; div.classList.add('loaded'); }, index*50);
+            setTimeout(() => {
+                full.style.opacity = '1';
+                div.classList.add('loaded');
+            }, index * 50);
 
             loadedCount++;
-
-            // ИСПРАВЛЕНИЕ ТУТ:
-            // Если это первая загруженная картинка — запускаем цикл анимации
-            if(loadedCount === 1){
+            // Запускаем анимацию, как только появилась хотя бы одна картинка
+            if (loadedCount === 1 && !isAnimating) {
+                isAnimating = true;
                 requestAnimationFrame(animateGrid);
             }
-        }
+        };
     });
 }
 
-function animateGrid(){
+function animateGrid(time) {
+    if (!lastTime) lastTime = time;
+    const deltaTime = (time - lastTime) / 1000;
+    lastTime = time;
+
+    const moveStep = speed * deltaTime;
+
     items.forEach(div => {
-        // Достаем текущее значение top
-        let top = parseFloat(div.style.top) - speed;
+        let y = parseFloat(div.dataset.y) - moveStep;
         const height = parseFloat(div.style.height);
+        const x = parseFloat(div.dataset.x);
         const col = parseInt(div.dataset.col);
 
-        // Если картинка улетела вверх
-        if(top + height < 0){
+        // Если картинка полностью ушла за верхний край
+        if (y + height < 0) {
             const colItems = items.filter(d => parseInt(d.dataset.col) === col);
-            const maxBottom = colItems.length ? Math.max(...colItems.map(d => parseFloat(d.style.top) + parseFloat(d.style.height))) : 0;
-            top = maxBottom + gap;
+            const maxBottom = Math.max(...colItems.map(d => parseFloat(d.dataset.y) + parseFloat(d.style.height)));
+            y = maxBottom + gap;
         }
 
-        div.style.top = `${top}px`;
-
-        // Добавь эту строку для аппаратного ускорения на телефонах:
-        div.style.transform = 'translateZ(0)';
+        div.dataset.y = y;
+        // Двигаем через transform (это очень быстро)
+        div.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     });
 
     requestAnimationFrame(animateGrid);
 }
 
-window.addEventListener('load', ()=>{ setupGrid(); });
+// Запуск при загрузке
+window.addEventListener('DOMContentLoaded', setupGrid);
 
-window.addEventListener('resize', ()=>{
-    items.forEach(i=>i.remove());
-    items = [];
-    setupGrid();
-});
-
-window.addEventListener('orientationchange', ()=>{
-    items.forEach(i=>i.remove());
-    items = [];
-    setupGrid();
+// Пересчет при ресайзе (чтобы на мобилках при повороте не ломалось)
+window.addEventListener('resize', () => {
+    location.reload(); // Самый надежный способ сбросить сетку при ресайзе
 });
 </script>
 </body>
