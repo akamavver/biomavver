@@ -40,8 +40,8 @@ function getRandomHeight(width, ratio){
 
 function setupGrid(){
     const colCount = getColumnCount();
-    const colWidth = (grid.clientWidth - gap*(colCount+1)) / colCount; // учитываем отступы слева/справа
-    const colBottoms = Array(colCount).fill(gap); // отступ сверху
+    const colWidth = (window.innerWidth - gap*(colCount+1)) / colCount; // мобила
+    const colBottoms = Array(colCount).fill(gap);
 
     images.sort(()=>Math.random()-0.5).forEach((src)=>{
         const div = document.createElement('div');
@@ -70,12 +70,13 @@ function setupGrid(){
             div.style.height = `${height}px`;
 
             const minCol = colBottoms.indexOf(Math.min(...colBottoms));
-            const x = gap + minCol * (colWidth + gap); // + gap слева
+            const x = gap + minCol * (colWidth + gap);
             const y = colBottoms[minCol];
             div.style.left = `${x}px`;
             div.style.top = `${y}px`;
 
-            colBottoms[minCol] += height + gap; // + gap снизу
+            colBottoms[minCol] += height + gap;
+            div.dataset.col = minCol;
             items.push(div);
 
             div.classList.add('loaded');
@@ -89,27 +90,37 @@ function animateGrid(){
     items.forEach(div=>{
         let top = parseFloat(div.style.top) - speed;
         const height = parseFloat(div.style.height);
-        const col = Math.round((parseFloat(div.style.left) - gap) / (parseFloat(div.style.width) + gap));
+        const col = parseInt(div.dataset.col);
 
         if(top + height < 0){
-            // возвращаем вниз с ровным отступом
-            top = Math.max(...items.filter(d=>parseInt(d.dataset.col) === col).map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) + gap || gap;
+            const colItems = items.filter(d=>parseInt(d.dataset.col) === col);
+            const maxBottom = colItems.length ? Math.max(...colItems.map(d=>parseFloat(d.style.top) + parseFloat(d.style.height))) : gap;
+            top = maxBottom + gap;
         }
+
         div.style.top = `${top}px`;
-        div.dataset.col = col;
     });
 
     requestAnimationFrame(animateGrid);
 }
 
-setupGrid();
+// --- Ждём полной загрузки ---
+window.addEventListener('load', ()=>{
+    setupGrid();
+    animateGrid();
+});
+
+// --- обновление при ресайзе и повороте ---
 window.addEventListener('resize', ()=>{
     items.forEach(i=>i.remove());
     items = [];
     setupGrid();
 });
-
-animateGrid();
+window.addEventListener('orientationchange', ()=>{
+    items.forEach(i=>i.remove());
+    items = [];
+    setupGrid();
+});
 </script>
 </body>
 </html>
