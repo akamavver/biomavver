@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>Mavver</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+
 </head>
 <body>
 
@@ -13,129 +15,11 @@
     <div class="hero-overlay"></div>
 
     <div class="bio-content">
-        <h1>это страница маввера</h1>
-        <p>это реально очень классный чувак</p>
+        <h1>это — маввер</h1>
+        <p>он реально крутой чувак</p>
     </div>
 </div>
 
-<script>
-const images = ["img_0.jpg", "img_1.jpg", "img_2.jpg", "img_3.jpg", "img_4.jpg", "img_5.jpg", "img_6.jpg", "img_7.jpg", "img_8.jpg", "img_9.jpg", "img_10.jpg", "img_11.jpg", "img_12.jpg", "img_13.jpg", "img_14.jpg", "img_15.jpg", "img_16.jpg", "img_17.jpg", "img_18.jpg", "img_19.jpg", "img_20.jpg", "img_21.jpg", "img_22.jpg", "img_23.jpg", "img_24.jpg", "img_25.jpg", "img_26.jpg", "img_27.jpg", "img_28.jpg", "img_29.jpg", "img_30.jpg", "img_31.jpg", "img_32.jpg", "img_33.jpg", "img_34.jpg", "img_35.jpg", "img_36.jpg", "img_37.jpg", "img_38.jpg", "img_39.jpg", "img_40.jpg", "img_41.jpg", "img_42.jpg", "img_43.jpg", "img_44.jpg", "img_45.jpg", "img_46.jpg", "img_47.jpg", "img_48.jpg", "img_49.jpg", "img_50.jpg", "img_51.jpg", "img_52.jpg", "img_53.jpg", "img_54.jpg", "img_55.jpg", "img_56.jpg", "img_57.jpg", "img_58.jpg", "img_59.jpg", "img_60.jpg", "img_61.jpg", "img_62.jpg", "img_63.jpg", "img_64.jpg", "img_65.jpg", "img_66.jpg", "img_67.jpg", "img_68.jpg"];
-const grid = document.getElementById('grid');
-let items = [];
-const gap = 10;
-// Базовая скорость (пикселей в секунду).
-// На мобилках сделаем чуть быстрее, чтобы ощущалось бодрее.
-const speed = window.innerWidth < 600 ? 120 : 80;
-
-let lastTime = 0;
-let isAnimating = false;
-
-function getColumnCount() {
-    const w = window.innerWidth;
-    if(w < 600) return 2;
-    if(w < 900) return 3;
-    if(w < 1200) return 4;
-    return 6;
-}
-
-function setupGrid(){
-    const colCount = getColumnCount();
-    const colWidth = (window.innerWidth - gap * (colCount + 1)) / colCount;
-    const colBottoms = Array(colCount).fill(gap);
-
-    let loadedCount = 0;
-
-    // Сортируем и создаем элементы
-    images.sort(() => Math.random() - 0.5).forEach((src, index) => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.style.position = 'absolute';
-        div.style.width = `${colWidth}px`;
-        div.style.willChange = 'transform'; // Оптимизация для GPU
-
-        const blur = document.createElement('img');
-        blur.src = `blur/${src}`;
-        blur.className = 'blur';
-
-        const full = document.createElement('img');
-        full.src = `assets/${src}`;
-        full.className = 'full';
-        full.style.opacity = '0';
-
-        div.appendChild(blur);
-        div.appendChild(full);
-        grid.appendChild(div);
-
-        full.onload = () => {
-            const ratio = full.naturalHeight / full.naturalWidth;
-            const height = colWidth * ratio;
-            div.style.height = `${height}px`;
-
-            const minCol = colBottoms.indexOf(Math.min(...colBottoms));
-            const x = gap + minCol * (colWidth + gap);
-            const y = colBottoms[minCol];
-
-            // Сохраняем координаты в dataset для расчетов
-            div.dataset.y = y;
-            div.dataset.x = x;
-            div.dataset.col = minCol;
-
-            // Устанавливаем начальную позицию
-            div.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-
-            colBottoms[minCol] += height + gap;
-            items.push(div);
-
-            setTimeout(() => {
-                full.style.opacity = '1';
-                div.classList.add('loaded');
-            }, index * 50);
-
-            loadedCount++;
-            // Запускаем анимацию, как только появилась хотя бы одна картинка
-            if (loadedCount === 1 && !isAnimating) {
-                isAnimating = true;
-                requestAnimationFrame(animateGrid);
-            }
-        };
-    });
-}
-
-function animateGrid(time) {
-    if (!lastTime) lastTime = time;
-    const deltaTime = (time - lastTime) / 1000;
-    lastTime = time;
-
-    const moveStep = speed * deltaTime;
-
-    items.forEach(div => {
-        let y = parseFloat(div.dataset.y) - moveStep;
-        const height = parseFloat(div.style.height);
-        const x = parseFloat(div.dataset.x);
-        const col = parseInt(div.dataset.col);
-
-        // Если картинка полностью ушла за верхний край
-        if (y + height < 0) {
-            const colItems = items.filter(d => parseInt(d.dataset.col) === col);
-            const maxBottom = Math.max(...colItems.map(d => parseFloat(d.dataset.y) + parseFloat(d.style.height)));
-            y = maxBottom + gap;
-        }
-
-        div.dataset.y = y;
-        // Двигаем через transform (это очень быстро)
-        div.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    });
-
-    requestAnimationFrame(animateGrid);
-}
-
-// Запуск при загрузке
-window.addEventListener('DOMContentLoaded', setupGrid);
-
-// Пересчет при ресайзе (чтобы на мобилках при повороте не ломалось)
-window.addEventListener('resize', () => {
-    location.reload(); // Самый надежный способ сбросить сетку при ресайзе
-});
-</script>
+<script src="script.js"></script>
 </body>
 </html>
