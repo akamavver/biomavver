@@ -3,53 +3,44 @@ const grid = document.getElementById('grid');
 
 let items = [];
 const gap = 10;
-const speed = window.innerWidth < 600 ? 120 : 80;
+const maxColWidth = 220;
+const speed = window.innerWidth < 600 ? 120 : 300;
 
 let lastTime = 0;
 let isAnimating = false;
 
 function getColumnCount() {
-    const w = window.innerWidth;
-    if (w < 600) return 2;
-    if (w < 900) return 3;
-    if (w < 1200) return 4;
-    return 6;
+    const availableWidth = window.innerWidth;
+    const colCount = Math.floor((availableWidth + gap) / (maxColWidth + gap));
+    return Math.max(2, colCount);
 }
 
-// умные веса размеров (динамически меняются)
 function getAdaptiveSize(colCount, density) {
-    // density = насколько сетка "забита"
     let variants;
 
     if (density < 0.3) {
-        // пусто → можно большие
         variants = [
-            { w: 2, h: 2, weight: 4 },
-            { w: 2, h: 1, weight: 3 },
+            { w: 2, h: 2, weight: 1 },
+            { w: 2, h: 1, weight: 2 },
             { w: 1, h: 2, weight: 3 },
-            { w: 1, h: 1, weight: 2 }
+            { w: 1, h: 1, weight: 6 }
         ];
     } else if (density < 0.7) {
-        // норм → баланс
         variants = [
-            { w: 2, h: 2, weight: 2 },
-            { w: 2, h: 1, weight: 3 },
+            { w: 2, h: 2, weight: 1 },
+            { w: 2, h: 1, weight: 2 },
             { w: 1, h: 2, weight: 3 },
-            { w: 1, h: 1, weight: 5 }
+            { w: 1, h: 1, weight: 8 }
         ];
     } else {
-        // перегружено → мелкие
         variants = [
-            { w: 1, h: 1, weight: 8 },
-            { w: 1, h: 2, weight: 2 },
-            { w: 2, h: 1, weight: 1 }
+            { w: 1, h: 1, weight: 10 },
+            { w: 1, h: 2, weight: 2 }
         ];
     }
 
-    // фильтр по ширине
     variants = variants.filter(v => v.w <= colCount);
 
-    // weighted random
     const total = variants.reduce((s, v) => s + v.weight, 0);
     let r = Math.random() * total;
 
@@ -62,7 +53,12 @@ function getAdaptiveSize(colCount, density) {
 
 function setupGrid() {
     const colCount = getColumnCount();
-    const colWidth = (window.innerWidth - gap * (colCount + 1)) / colCount;
+    const colWidth = maxColWidth;
+    const baseHeight = colWidth * 0.9;
+
+    const totalWidth = colCount * colWidth + (colCount + 1) * gap;
+    grid.style.width = `${totalWidth}px`;
+    grid.style.margin = '0 auto';
 
     const colBottoms = Array(colCount).fill(gap);
     let loadedCount = 0;
@@ -103,8 +99,7 @@ function setupGrid() {
             }
 
             const width = colWidth * size.w + gap * (size.w - 1);
-            const ratio = full.naturalHeight / full.naturalWidth;
-            const height = width * ratio * (size.h / size.w);
+            const height = baseHeight * size.h + gap * (size.h - 1);
 
             const x = gap + bestCol * (colWidth + gap);
             const y = minHeight;
@@ -147,7 +142,12 @@ function animateGrid(time) {
     const moveStep = speed * deltaTime;
 
     items.forEach(div => {
-        let y = parseFloat(div.dataset.y) - moveStep;
+    let y = parseFloat(div.dataset.y);
+    if (isNaN(y)) y = 0;
+        y -= moveStep;
+    if (!isFinite(y)) {
+        y = window.innerHeight;
+    }
         const height = parseFloat(div.style.height);
         const x = parseFloat(div.dataset.x);
         const col = parseInt(div.dataset.col);
@@ -159,9 +159,14 @@ function animateGrid(time) {
                 parseInt(d.dataset.col) + parseInt(d.dataset.span) - 1 >= col
             );
 
-            const maxBottom = Math.max(...colItems.map(d =>
-                parseFloat(d.dataset.y) + parseFloat(d.style.height)
-            ));
+            let maxBottom;
+
+            if (colItems.length === 0) {
+                maxBottom = window.innerHeight; // fallback вниз экрана
+            } else {
+                maxBottom = Math.max(...colItems.map(d =>
+                parseFloat(d.dataset.y) + parseFloat(d.style.height)));
+            }
 
             y = maxBottom + gap;
         }
@@ -174,7 +179,4 @@ function animateGrid(time) {
 }
 
 window.addEventListener('DOMContentLoaded', setupGrid);
-
-window.addEventListener('resize', () => {
-    location.reload();
-});
+window.addEventListener('resize', () => location.reload());
