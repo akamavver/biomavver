@@ -1,30 +1,8 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<title>Mavver</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div class="hero-wrapper">
-    <div class="hero-grid" id="grid"></div>
-    <div class="hero-overlay"></div>
-
-    <div class="bio-content">
-        <h1>это страница маввера</h1>
-        <p>это реально очень классный чувак</p>
-    </div>
-</div>
-
-<script>
 const images = {{IMAGES}};
 const grid = document.getElementById('grid');
+
 let items = [];
 const gap = 10;
-// Базовая скорость (пикселей в секунду).
-// На мобилках сделаем чуть быстрее, чтобы ощущалось бодрее.
 const speed = window.innerWidth < 600 ? 120 : 80;
 
 let lastTime = 0;
@@ -32,26 +10,24 @@ let isAnimating = false;
 
 function getColumnCount() {
     const w = window.innerWidth;
-    if(w < 600) return 2;
-    if(w < 900) return 3;
-    if(w < 1200) return 4;
+    if (w < 600) return 2;
+    if (w < 900) return 3;
+    if (w < 1200) return 4;
     return 6;
 }
 
-function setupGrid(){
+function setupGrid() {
     const colCount = getColumnCount();
     const colWidth = (window.innerWidth - gap * (colCount + 1)) / colCount;
     const colBottoms = Array(colCount).fill(gap);
 
     let loadedCount = 0;
 
-    // Сортируем и создаем элементы
     images.sort(() => Math.random() - 0.5).forEach((src, index) => {
         const div = document.createElement('div');
         div.className = 'item';
-        div.style.position = 'absolute';
         div.style.width = `${colWidth}px`;
-        div.style.willChange = 'transform'; // Оптимизация для GPU
+        div.style.willChange = 'transform';
 
         const blur = document.createElement('img');
         blur.src = `blur/${src}`;
@@ -75,12 +51,10 @@ function setupGrid(){
             const x = gap + minCol * (colWidth + gap);
             const y = colBottoms[minCol];
 
-            // Сохраняем координаты в dataset для расчетов
             div.dataset.y = y;
             div.dataset.x = x;
             div.dataset.col = minCol;
 
-            // Устанавливаем начальную позицию
             div.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 
             colBottoms[minCol] += height + gap;
@@ -92,7 +66,6 @@ function setupGrid(){
             }, index * 50);
 
             loadedCount++;
-            // Запускаем анимацию, как только появилась хотя бы одна картинка
             if (loadedCount === 1 && !isAnimating) {
                 isAnimating = true;
                 requestAnimationFrame(animateGrid);
@@ -114,7 +87,6 @@ function animateGrid(time) {
         const x = parseFloat(div.dataset.x);
         const col = parseInt(div.dataset.col);
 
-        // Если картинка полностью ушла за верхний край
         if (y + height < 0) {
             const colItems = items.filter(d => parseInt(d.dataset.col) === col);
             const maxBottom = Math.max(...colItems.map(d => parseFloat(d.dataset.y) + parseFloat(d.style.height)));
@@ -122,20 +94,14 @@ function animateGrid(time) {
         }
 
         div.dataset.y = y;
-        // Двигаем через transform (это очень быстро)
         div.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     });
 
     requestAnimationFrame(animateGrid);
 }
 
-// Запуск при загрузке
 window.addEventListener('DOMContentLoaded', setupGrid);
 
-// Пересчет при ресайзе (чтобы на мобилках при повороте не ломалось)
 window.addEventListener('resize', () => {
-    location.reload(); // Самый надежный способ сбросить сетку при ресайзе
+    location.reload();
 });
-</script>
-</body>
-</html>

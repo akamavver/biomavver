@@ -7,8 +7,10 @@ INPUT_DIR = os.path.join('Images', 'mavver')
 OUTPUT_DIR = 'build'
 IMG_OUTPUT = os.path.join(OUTPUT_DIR, 'assets')
 BLUR_OUTPUT = os.path.join(OUTPUT_DIR, 'blur')
-TEMPLATE_NAME = 'template.html'
+
+TEMPLATE_NAME = 'index.html'
 CSS_NAME = 'style.css'
+SCRIPT_NAME = 'script.js'
 
 def build():
     if not os.path.exists(INPUT_DIR):
@@ -36,24 +38,27 @@ def build():
         with Image.open(input_path) as img:
             img = img.convert('RGB')
 
-            # FULL
             img.save(full_path, 'JPEG', quality=85)
 
-            # BLUR
             small = img.resize((40, 40))
             small = small.filter(ImageFilter.GaussianBlur(6))
             small.save(blur_path, 'JPEG', quality=30)
 
         processed.append(new_name)
 
+    # Копируем CSS
     shutil.copy(CSS_NAME, os.path.join(OUTPUT_DIR, CSS_NAME))
 
-    with open(TEMPLATE_NAME, 'r', encoding='utf-8') as f:
-        content = f.read()
-        content = content.replace('{{IMAGES}}', json.dumps(processed))
+    # Обрабатываем SCRIPT (ВАЖНО)
+    with open(SCRIPT_NAME, 'r', encoding='utf-8') as f:
+        script_content = f.read()
+        script_content = script_content.replace('{{IMAGES}}', json.dumps(processed))
 
-    with open(os.path.join(OUTPUT_DIR, 'index.html'), 'w', encoding='utf-8') as f:
-        f.write(content)
+    with open(os.path.join(OUTPUT_DIR, 'script.js'), 'w', encoding='utf-8') as f:
+        f.write(script_content)
+
+    # Копируем HTML (без замен)
+    shutil.copy(TEMPLATE_NAME, os.path.join(OUTPUT_DIR, 'index.html'))
 
     print("Сайт собран!")
 
