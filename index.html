@@ -1,25 +1,30 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Mavver</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Это — mavver. Очень крутой и пафосный Александр mavver." />
+  <title>mavver</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-<div class="hero-wrapper">
-    <div class="hero-grid" id="grid"></div>
-    <div class="hero-overlay"></div>
-
-    <div class="bio-content">
-        <h1>это — маввер</h1>
-        <p>он реально крутой чувак</p>
+  <main class="stage" id="stage" aria-label="mavver">
+    <div class="mosaic" id="mosaic"></div>
+    <div class="veil" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="copy">
+      <h1 class="title">
+        <span class="kicker">Это —</span>
+        <span class="name">mavver.</span>
+      </h1>
+      <p class="bio">Очень крутой и пафосный Александр <em>mavver</em></p>
     </div>
-</div>
-
-<script src="script.js"></script>
+  </main>
+  <script src="script.js"></script>
 </body>
 </html>
