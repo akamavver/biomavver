@@ -1,84 +1,274 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+:root {
+  --bg: #000;
+  --fg: #fff;
+  --ease-luxe: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
 body {
-    background: #000;
-    color: #fff;
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
 }
 
-.hero-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden;
+.stage {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  isolation: isolate;
 }
 
-.hero-grid {
-    position: relative;
-    width: 100%;
-    height: 100%;
+.mosaic {
+  position: absolute;
+  inset: 5px;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: 4px;
 }
 
-.item {
-    position: absolute;
-    overflow: hidden;
-    border-radius: 8px;
-    background: #111;
+.cell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #000;
+  contain: layout paint;
+  opacity: 0;
+  transform: translateY(18px) scale(0.985);
+  filter: blur(8px);
 }
 
-.item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.stage.is-play .cell {
+  animation: cellIn 0.9s var(--ease-luxe) var(--delay, 2.15s) both;
 }
 
-.item img.blur {
-    filter: blur(20px);
-    transform: scale(1.1);
+.cell-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transform: scale(1.04);
+  filter: brightness(0.72) saturate(0.92) contrast(1.05);
+  transition-property: opacity, transform, filter;
+  transition-duration: 1.15s, 1.4s, 1.15s;
+  transition-timing-function: var(--ease-soft);
 }
 
-.item img.full {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.4s ease;
+.cell-img.is-front {
+  opacity: 1;
+  transform: scale(1);
 }
 
-.item.loaded img.full {
+.cell:hover .cell-img.is-front {
+  transform: scale(1.07);
+  filter: brightness(0.88) saturate(1) contrast(1.06);
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(0 0 0 / 0.78) 0%,
+      rgb(0 0 0 / 0.42) 28%,
+      rgb(0 0 0 / 0.12) 52%,
+      rgb(0 0 0 / 0.28) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0.42) 0%,
+      rgb(0 0 0 / 0) 24%,
+      rgb(0 0 0 / 0) 76%,
+      rgb(0 0 0 / 0.5) 100%
+    );
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+.copy {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8vh 6.2vw;
+  max-width: min(96vw, 1180px);
+  pointer-events: none;
+}
+
+.title {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.32em;
+  font-size: clamp(3.4rem, 9.4vw, 9.6rem);
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  text-shadow: 0 2px 40px rgb(0 0 0 / 0.55);
+}
+
+.kicker,
+.name {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(12px);
+  transform: translateX(-4.25rem);
+  will-change: transform, opacity, filter;
+}
+
+.kicker {
+  font-weight: 500;
+  font-size: 0.36em;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.name {
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.bio {
+  margin: 1.35rem 0 0;
+  max-width: 22em;
+  font-size: clamp(0.95rem, 1.28vw, 1.32rem);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.035em;
+  color: rgb(255 255 255 / 0.78);
+  text-wrap: pretty;
+  text-shadow: 0 1px 18px rgb(0 0 0 / 0.7);
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(1.35rem);
+  will-change: transform, opacity, filter;
+}
+
+.bio em {
+  font-style: normal;
+  font-weight: 800;
+  color: #fff;
+}
+
+.stage.is-play .kicker {
+  animation: slideIn 1.35s var(--ease-luxe) 1s both;
+}
+
+.stage.is-play .name {
+  animation: slideIn 1.5s var(--ease-luxe) 1.14s both;
+}
+
+.stage.is-play .bio {
+  animation: riseIn 1.15s var(--ease-luxe) 1.58s both;
+}
+
+@keyframes slideIn {
+  to {
     opacity: 1;
+    filter: blur(0);
+    transform: translateX(0);
+  }
 }
 
-.hero-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-        linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, transparent 25%),
-        linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 25%),
-        rgba(0,0,0,0.4);
+@keyframes riseIn {
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
 }
 
-.bio-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    z-index: 10;
+@keyframes cellIn {
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
 }
 
-.bio-content h1 {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 4rem;
+@media (max-width: 720px) {
+  .mosaic {
+    inset: 3px;
+    gap: 2px;
+  }
+
+  .copy {
+    padding: 10vh 7vw 8vh;
+    justify-content: flex-end;
+    max-width: 100%;
+  }
+
+  .title {
+    font-size: clamp(2.6rem, 16vw, 4.4rem);
+  }
+
+  .bio {
+    max-width: 18em;
+  }
+
+  .cell:hover .cell-img.is-front {
+    transform: scale(1);
+    filter: brightness(0.72) saturate(0.92) contrast(1.05);
+  }
 }
 
-.bio-content p {
-    color: #ccc;
-    font-size: 2rem;
+@media (prefers-reduced-motion: reduce) {
+  .kicker,
+  .name,
+  .bio,
+  .stage.is-play .kicker,
+  .stage.is-play .name,
+  .stage.is-play .bio,
+  .stage.is-play .cell {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .cell-img {
+    transition-duration: 0.01ms;
+  }
 }
