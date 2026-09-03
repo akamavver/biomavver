@@ -1,7 +1,15 @@
 const PHOTO_DIR = "Images/mavver";
-const VISIBLE_COUNT = 30;
-const SWAP_EVERY_MS = 5000;
-const SWAP_BATCH = 3;
+const VISIBLE_COUNT = 42;
+
+const TEXT_ANIMATION_END = 2730;
+const MOSAIC_START_DELAY = 50;
+
+const TILE_TYPES = [
+  { w: 2, h: 2, weight: 25 },
+  { w: 2, h: 1, weight: 30 },
+  { w: 1, h: 2, weight: 25 },
+  { w: 1, h: 1, weight: 20 },
+];
 
 const PHOTOS = [
   "photo_2024-04-11_13-06-42.jpg",
@@ -74,149 +82,290 @@ const PHOTOS = [
   "photo_2026-03-27_20-25-10.jpg",
 ];
 
-const MOSAIC = [
-  { c: 1, r: 1, w: 2, h: 2 },
-  { c: 3, r: 1, w: 2, h: 1 },
-  { c: 5, r: 1, w: 1, h: 2 },
-  { c: 6, r: 1, w: 2, h: 2 },
-  { c: 8, r: 1, w: 1, h: 1 },
-  { c: 9, r: 1, w: 2, h: 1 },
-  { c: 11, r: 1, w: 2, h: 2 },
-  { c: 3, r: 2, w: 2, h: 1 },
-  { c: 8, r: 2, w: 1, h: 1 },
-  { c: 9, r: 2, w: 2, h: 1 },
-  { c: 1, r: 3, w: 1, h: 2 },
-  { c: 2, r: 3, w: 2, h: 1 },
-  { c: 4, r: 3, w: 2, h: 2 },
-  { c: 6, r: 3, w: 1, h: 1 },
-  { c: 7, r: 3, w: 2, h: 1 },
-  { c: 9, r: 3, w: 1, h: 1 },
-  { c: 10, r: 3, w: 2, h: 2 },
-  { c: 12, r: 3, w: 1, h: 2 },
-  { c: 2, r: 4, w: 2, h: 1 },
-  { c: 6, r: 4, w: 1, h: 1 },
-  { c: 7, r: 4, w: 2, h: 1 },
-  { c: 9, r: 4, w: 1, h: 1 },
-  { c: 1, r: 5, w: 2, h: 2 },
-  { c: 3, r: 5, w: 1, h: 2 },
-  { c: 4, r: 5, w: 2, h: 2 },
-  { c: 6, r: 5, w: 2, h: 2 },
-  { c: 8, r: 5, w: 1, h: 2 },
-  { c: 9, r: 5, w: 2, h: 2 },
-  { c: 11, r: 5, w: 2, h: 1 },
-  { c: 11, r: 6, w: 2, h: 1 },
-];
-
 function photoUrl(name) {
   return `${PHOTO_DIR}/${encodeURIComponent(name)}`;
 }
 
 function shuffle(items) {
-  const next = items.slice();
-  for (let i = next.length - 1; i > 0; i -= 1) {
+  const result = items.slice();
+
+  for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    const tmp = next[i];
-    next[i] = next[j];
-    next[j] = tmp;
+
+    [result[i], result[j]] = [
+      result[j],
+      result[i],
+    ];
   }
-  return next;
+
+  return result;
+}
+
+function randomTileType() {
+  const totalWeight = TILE_TYPES.reduce(
+    (sum, tile) => sum + tile.weight,
+    0
+  );
+
+  let value = Math.random() * totalWeight;
+
+  for (const tile of TILE_TYPES) {
+    value -= tile.weight;
+
+    if (value <= 0) {
+      return tile;
+    }
+  }
+
+  return TILE_TYPES[0];
+}
+
+function preloadImage(src) {
+  return new Promise((resolve) => {
+    const image = new Image();
+
+    image.decoding = "async";
+
+    let finished = false;
+
+    const finish = (success) => {
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+      if (success) {
+        resolve({
+          src,
+          image,
+        });
+      } else {
+        resolve(null);
+      }
+    };
+
+    image.onload = async () => {
+      try {
+        if (typeof image.decode === "function") {
+          await image.decode();
+        }
+
+        if (
+          image.naturalWidth > 0 &&
+          image.naturalHeight > 0
+        ) {
+          finish(true);
+        } else {
+          finish(false);
+        }
+      } catch {
+        finish(false);
+      }
+    };
+
+    image.onerror = () => {
+      finish(false);
+    };
+
+    image.src = src;
+  });
+}
+
+async function preloadImages(sources) {
+  const results = await Promise.all(
+    sources.map(preloadImage)
+  );
+
+  return results
+    .filter(Boolean)
+    .map((item) => item.src);
 }
 
 function cellStaggerMs(index) {
-  const group = Math.floor(index / 3);
-  const inner = index % 3;
-  return 2150 + group * 130 + inner * 36;
+  const row = Math.floor(index / 4);
+  const column = index % 4;
+
+  return (
+    70 +
+    row * 90 +
+    column * 45
+  );
 }
 
-function createCell(cell, index, src) {
-  const el = document.createElement("div");
-  el.className = "cell";
-  el.style.gridColumn = `${cell.c} / span ${cell.w}`;
-  el.style.gridRow = `${cell.r} / span ${cell.h}`;
-  el.style.setProperty("--delay", `${cellStaggerMs(index)}ms`);
+function createCell(size, index, src) {
+  const cell = document.createElement("div");
 
-  const a = document.createElement("img");
-  a.className = "cell-img is-front";
-  a.alt = "";
-  a.decoding = "async";
-  a.draggable = false;
-  a.fetchPriority = index < 8 ? "high" : "low";
-  a.src = src;
+  cell.className = "cell";
 
-  const b = document.createElement("img");
-  b.className = "cell-img";
-  b.alt = "";
-  b.decoding = "async";
-  b.draggable = false;
-  b.fetchPriority = "low";
+  cell.style.gridColumn =
+    `span ${size.w}`;
 
-  el.append(a, b);
-  el._front = a;
-  el._back = b;
-  el._src = src;
-  return el;
+  cell.style.gridRow =
+    `span ${size.h}`;
+
+  cell.style.animationDelay =
+    `${cellStaggerMs(index)}ms`;
+
+  const image = document.createElement("img");
+
+  image.className =
+    "cell-img is-front";
+
+  image.alt = "";
+
+  image.decoding = "async";
+
+  image.draggable = false;
+
+  image.loading = "eager";
+
+  image.src = src;
+
+  cell.appendChild(image);
+
+  return cell;
 }
 
-function crossfade(el, nextSrc) {
-  if (!nextSrc || el._src === nextSrc) return;
-  const back = el._back;
-  const img = new Image();
-  img.src = nextSrc;
-  const reveal = () => {
-    back.src = nextSrc;
-    back.classList.add("is-front");
-    el._front.classList.remove("is-front");
-    const tmp = el._front;
-    el._front = back;
-    el._back = tmp;
-    el._src = nextSrc;
-  };
-  if (typeof img.decode === "function") {
-    img.decode().then(reveal).catch(reveal);
-  } else if (img.complete) {
-    reveal();
-  } else {
-    img.onload = reveal;
+function getVisualOrder(cells) {
+  const items = Array.from(cells).map(
+    (cell) => {
+      const rect =
+        cell.getBoundingClientRect();
+
+      return {
+        cell,
+        top: rect.top,
+        left: rect.left,
+      };
+    }
+  );
+
+  items.sort((a, b) => {
+    const topDifference =
+      a.top - b.top;
+
+    if (Math.abs(topDifference) > 15) {
+      return topDifference;
+    }
+
+    return a.left - b.left;
+  });
+
+  return items.map(
+    (item) => item.cell
+  );
+}
+
+function revealMosaic(mosaic) {
+  const cells =
+    mosaic.querySelectorAll(".cell");
+
+  const ordered =
+    getVisualOrder(cells);
+
+  ordered.forEach(
+    (cell, index) => {
+      cell.style.animationDelay =
+        `${cellStaggerMs(index)}ms`;
+
+      cell.classList.add(
+        "is-visible"
+      );
+    }
+  );
+}
+
+async function createMosaic() {
+  const mosaic =
+    document.getElementById("mosaic");
+
+  if (!mosaic) {
+    return;
   }
+
+  const deck =
+    shuffle(PHOTOS);
+
+  const requested =
+    deck.slice(
+      0,
+      Math.min(
+        VISIBLE_COUNT,
+        deck.length
+      )
+    );
+
+  const sources =
+    requested.map(photoUrl);
+
+  const validSources =
+    await preloadImages(sources);
+
+  if (!validSources.length) {
+    return;
+  }
+
+  const fragment =
+    document.createDocumentFragment();
+
+  validSources.forEach(
+    (src, index) => {
+      const size =
+        randomTileType();
+
+      const cell =
+        createCell(
+          size,
+          index,
+          src
+        );
+
+      fragment.appendChild(cell);
+    }
+  );
+
+  mosaic.innerHTML = "";
+
+  mosaic.appendChild(fragment);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      revealMosaic(mosaic);
+    });
+  });
 }
 
 function boot() {
-  const stage = document.getElementById("stage");
-  const mosaic = document.getElementById("mosaic");
-  const deck = shuffle(PHOTOS.slice());
-  const visible = deck.slice(0, VISIBLE_COUNT);
-  const pool = deck.slice(VISIBLE_COUNT);
-  const nodes = MOSAIC.map((cell, i) => createCell(cell, i, photoUrl(visible[i])));
-  mosaic.append(...nodes);
+  const stage =
+    document.getElementById("stage");
 
-  requestAnimationFrame(() => stage.classList.add("is-play"));
+  const mosaic =
+    document.getElementById("mosaic");
 
-  let lastSwapped = new Set();
-  const lastCellMs = cellStaggerMs(VISIBLE_COUNT - 1) + 900;
+  if (!stage || !mosaic) {
+    return;
+  }
 
-  window.setTimeout(() => {
-    window.setInterval(() => {
-      const candidates = [];
-      for (let i = 0; i < nodes.length; i += 1) {
-        if (!lastSwapped.has(i)) candidates.push(i);
-      }
-      const source = candidates.length >= SWAP_BATCH ? candidates : nodes.map((_, i) => i);
-      const picks = shuffle(source).slice(0, Math.min(SWAP_BATCH, nodes.length, pool.length));
-      lastSwapped = new Set(picks);
-      for (const idx of picks) {
-        const incoming = pool.shift();
-        if (!incoming) break;
-        const outgoing = visible[idx];
-        visible[idx] = incoming;
-        pool.push(outgoing);
-        crossfade(nodes[idx], photoUrl(incoming));
-      }
-    }, SWAP_EVERY_MS);
-  }, lastCellMs + SWAP_EVERY_MS);
+  mosaic.innerHTML = "";
+
+  requestAnimationFrame(() => {
+    stage.classList.add("is-play");
+  });
+
+  setTimeout(() => {
+    createMosaic();
+  }, TEXT_ANIMATION_END + MOSAIC_START_DELAY);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot, { once: true });
+if (
+  document.readyState === "loading"
+) {
+  document.addEventListener(
+    "DOMContentLoaded",
+    boot,
+    { once: true }
+  );
 } else {
   boot();
 }
