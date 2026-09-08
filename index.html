@@ -2,29 +2,129 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+
   <meta name="theme-color" content="#000000" />
-  <meta name="description" content="Это — mavver. Очень крутой и пафосный Александр mavver." />
+  <meta
+    name="description"
+    content="mavver — персональный сайт Александра."
+  />
+
   <title>mavver</title>
+
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;800&display=swap" rel="stylesheet" />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <main class="stage" id="stage" aria-label="mavver">
-    <div class="mosaic" id="mosaic"></div>
-    <div class="veil" aria-hidden="true"></div>
-    <div class="grain" aria-hidden="true"></div>
-    <div class="copy">
-      <h1 class="title">
-        <span class="kicker">Это</span>
-        <span class="name">mavver</span>
-      </h1>
-      <p class="bio">Очень крутой, пафосный и чутка ахуенный <em>Александр</em></p>
-    </div>
+  <main id="page">
+
+    <section class="hero" id="hero">
+      <div class="mosaic" id="mosaic"></div>
+
+      <div class="hero-overlay" aria-hidden="true"></div>
+
+      <div class="hero-bottom-fade" id="heroBottomFade" aria-hidden="true"></div>
+
+      <div class="hero-status" id="heroStatus">
+        <span class="hero-status-dot"></span>
+        <span>mavver</span>
+      </div>
+    </section>
+
+    <section class="bio-section" id="bio">
+      <div class="bio-container">
+
+        <h2 class="bio-heading">
+          Краткое био
+        </h2>
+
+        <div class="bio-content">
+
+          <div class="bio-text">
+            <p>
+              Меня зовут <strong>Александр</strong>.
+              Я занимаюсь разработкой, люблю технологии,
+              интерфейсы и всякие штуки, которые почему-то
+              всегда начинают работать в три часа ночи.
+            </p>
+
+            <p>
+              Создаю проекты, экспериментирую с дизайном,
+              программированием и автоматизацией.
+              Мне нравится превращать странные идеи
+              в работающие вещи.
+            </p>
+
+            <p>
+              Сейчас развиваюсь в IT и постепенно собираю
+              собственный набор проектов, которыми действительно
+              хочется поделиться.
+            </p>
+          </div>
+
+          <nav class="social-links" aria-label="Социальные сети">
+
+            <a
+              class="social-button social-vk"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>VK</span>
+              <span class="social-arrow">↗</span>
+            </a>
+
+            <a
+              class="social-button social-github"
+              href="https://github.com/akamavver"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>GITHUB</span>
+              <span class="social-arrow">↗</span>
+            </a>
+
+            <a
+              class="social-button social-telegram"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>TELEGRAM</span>
+              <span class="social-arrow">↗</span>
+            </a>
+
+            <a
+              class="social-button social-other"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>OTHER</span>
+              <span class="social-arrow">↗</span>
+            </a>
+
+          </nav>
+
+        </div>
+      </div>
+    </section>
+
   </main>
+
   <script src="script.js"></script>
 </body>
 </html>

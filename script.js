@@ -1,86 +1,33 @@
 const PHOTO_DIR = "Images/mavver";
-const VISIBLE_COUNT = 42;
+const PHOTO_LIST_URL = "photos.json";
 
-const TEXT_ANIMATION_END = 2730;
-const MOSAIC_START_DELAY = 50;
+const VISIBLE_COUNT = 56;
 
-const TILE_TYPES = [
+const TILE_TYPES_DESKTOP = [
   { w: 2, h: 2, weight: 25 },
   { w: 2, h: 1, weight: 30 },
   { w: 1, h: 2, weight: 25 },
-  { w: 1, h: 1, weight: 20 },
+  { w: 1, h: 1, weight: 20 }
 ];
 
-const PHOTOS = [
-  "photo_2024-04-11_13-06-42.jpg",
-  "photo_2024-11-11_10-24-52.jpg",
-  "photo_2024-11-19_23-33-36.jpg",
-  "photo_2025-01-01_06-29-51.jpg",
-  "photo_2025-01-03_03-20-09.jpg",
-  "photo_2025-01-24_16-22-14.jpg",
-  "photo_2025-04-12_14-37-28.jpg",
-  "photo_2025-06-17_03-30-39.jpg",
-  "photo_2025-06-28_02-27-07.jpg",
-  "photo_2026-01-17_01-14-22.jpg",
-  "photo_2026-01-17_01-14-24.jpg",
-  "photo_2026-01-17_01-18-01.jpg",
-  "photo_2026-01-17_01-18-05.jpg",
-  "photo_2026-01-17_01-25-02.jpg",
-  "photo_2026-02-06_01-35-46.jpg",
-  "photo_2026-03-27_20-04-10.jpg",
-  "photo_2026-03-27_20-19-22.jpg",
-  "photo_2026-03-27_20-19-33.jpg",
-  "photo_2026-03-27_20-19-40.jpg",
-  "photo_2026-03-27_20-19-48.jpg",
-  "photo_2026-03-27_20-19-55.jpg",
-  "photo_2026-03-27_20-20-00.jpg",
-  "photo_2026-03-27_20-20-04.jpg",
-  "photo_2026-03-27_20-20-08.jpg",
-  "photo_2026-03-27_20-20-10.jpg",
-  "photo_2026-03-27_20-20-17.jpg",
-  "photo_2026-03-27_20-20-31.jpg",
-  "photo_2026-03-27_20-21-12.jpg",
-  "photo_2026-03-27_20-21-14.jpg",
-  "photo_2026-03-27_20-21-16 (2).jpg",
-  "photo_2026-03-27_20-21-17.jpg",
-  "photo_2026-03-27_20-21-18.jpg",
-  "photo_2026-03-27_20-21-20.jpg",
-  "photo_2026-03-27_20-21-22.jpg",
-  "photo_2026-03-27_20-21-23.jpg",
-  "photo_2026-03-27_20-21-25.jpg",
-  "photo_2026-03-27_20-21-26.jpg",
-  "photo_2026-03-27_20-21-27.jpg",
-  "photo_2026-03-27_20-21-28.jpg",
-  "photo_2026-03-27_20-21-29.jpg",
-  "photo_2026-03-27_20-21-31.jpg",
-  "photo_2026-03-27_20-21-33.jpg",
-  "photo_2026-03-27_20-21-35.jpg",
-  "photo_2026-03-27_20-21-39.jpg",
-  "photo_2026-03-27_20-21-40.jpg",
-  "photo_2026-03-27_20-21-42.jpg",
-  "photo_2026-03-27_20-24-13.jpg",
-  "photo_2026-03-27_20-24-15.jpg",
-  "photo_2026-03-27_20-24-18.jpg",
-  "photo_2026-03-27_20-24-19.jpg",
-  "photo_2026-03-27_20-24-20.jpg",
-  "photo_2026-03-27_20-24-21.jpg",
-  "photo_2026-03-27_20-24-26.jpg",
-  "photo_2026-03-27_20-24-28.jpg",
-  "photo_2026-03-27_20-24-29.jpg",
-  "photo_2026-03-27_20-24-30.jpg",
-  "photo_2026-03-27_20-24-36.jpg",
-  "photo_2026-03-27_20-24-41.jpg",
-  "photo_2026-03-27_20-24-45.jpg",
-  "photo_2026-03-27_20-24-47.jpg",
-  "photo_2026-03-27_20-24-53.jpg",
-  "photo_2026-03-27_20-24-54.jpg",
-  "photo_2026-03-27_20-24-56.jpg",
-  "photo_2026-03-27_20-24-57.jpg",
-  "photo_2026-03-27_20-25-00.jpg",
-  "photo_2026-03-27_20-25-04.jpg",
-  "photo_2026-03-27_20-25-06.jpg",
-  "photo_2026-03-27_20-25-10.jpg",
+const TILE_TYPES_MOBILE = [
+  { w: 1, h: 1, weight: 100 }
 ];
+
+const MOSAIC_START_DELAY = 150;
+
+const CELL_STAGGER = {
+  base: 70,
+  row: 75,
+  column: 35
+};
+
+let currentPhotos = [];
+let resizeTimer = null;
+
+function isMobile() {
+  return window.matchMedia("(max-width: 600px)").matches;
+}
 
 function photoUrl(name) {
   return `${PHOTO_DIR}/${encodeURIComponent(name)}`;
@@ -94,7 +41,7 @@ function shuffle(items) {
 
     [result[i], result[j]] = [
       result[j],
-      result[i],
+      result[i]
     ];
   }
 
@@ -102,14 +49,18 @@ function shuffle(items) {
 }
 
 function randomTileType() {
-  const totalWeight = TILE_TYPES.reduce(
+  const types = isMobile()
+    ? TILE_TYPES_MOBILE
+    : TILE_TYPES_DESKTOP;
+
+  const totalWeight = types.reduce(
     (sum, tile) => sum + tile.weight,
     0
   );
 
   let value = Math.random() * totalWeight;
 
-  for (const tile of TILE_TYPES) {
+  for (const tile of types) {
     value -= tile.weight;
 
     if (value <= 0) {
@@ -117,7 +68,45 @@ function randomTileType() {
     }
   }
 
-  return TILE_TYPES[0];
+  return types[0];
+}
+
+async function fetchPhotoList() {
+  try {
+    const response = await fetch(
+      `${PHOTO_LIST_URL}?v=${Date.now()}`,
+      {
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `photos.json error: ${response.status}`
+      );
+    }
+
+    const photos = await response.json();
+
+    if (!Array.isArray(photos)) {
+      throw new Error(
+        "photos.json должен содержать массив"
+      );
+    }
+
+    return photos.filter(
+      (name) =>
+        typeof name === "string" &&
+        /\.(jpe?g|png|webp|gif|avif)$/i.test(name)
+    );
+  } catch (error) {
+    console.error(
+      "Не удалось получить список фотографий:",
+      error
+    );
+
+    return [];
+  }
 }
 
 function preloadImage(src) {
@@ -125,6 +114,7 @@ function preloadImage(src) {
     const image = new Image();
 
     image.decoding = "async";
+    image.loading = "eager";
 
     let finished = false;
 
@@ -135,14 +125,14 @@ function preloadImage(src) {
 
       finished = true;
 
-      if (success) {
-        resolve({
-          src,
-          image,
-        });
-      } else {
-        resolve(null);
-      }
+      resolve(
+        success
+          ? {
+              src,
+              image
+            }
+          : null
+      );
     };
 
     image.onload = async () => {
@@ -182,18 +172,7 @@ async function preloadImages(sources) {
     .map((item) => item.src);
 }
 
-function cellStaggerMs(index) {
-  const row = Math.floor(index / 4);
-  const column = index % 4;
-
-  return (
-    70 +
-    row * 90 +
-    column * 45
-  );
-}
-
-function createCell(size, index, src) {
+function createCell(size, src) {
   const cell = document.createElement("div");
 
   cell.className = "cell";
@@ -204,21 +183,15 @@ function createCell(size, index, src) {
   cell.style.gridRow =
     `span ${size.h}`;
 
-  cell.style.animationDelay =
-    `${cellStaggerMs(index)}ms`;
-
   const image = document.createElement("img");
 
-  image.className =
-    "cell-img is-front";
+  image.className = "cell-img";
 
   image.alt = "";
 
   image.decoding = "async";
-
-  image.draggable = false;
-
   image.loading = "eager";
+  image.draggable = false;
 
   image.src = src;
 
@@ -228,18 +201,15 @@ function createCell(size, index, src) {
 }
 
 function getVisualOrder(cells) {
-  const items = Array.from(cells).map(
-    (cell) => {
-      const rect =
-        cell.getBoundingClientRect();
+  const items = Array.from(cells).map((cell) => {
+    const rect = cell.getBoundingClientRect();
 
-      return {
-        cell,
-        top: rect.top,
-        left: rect.left,
-      };
-    }
-  );
+    return {
+      cell,
+      top: rect.top,
+      left: rect.left
+    };
+  });
 
   items.sort((a, b) => {
     const topDifference =
@@ -257,6 +227,17 @@ function getVisualOrder(cells) {
   );
 }
 
+function getCellStagger(index) {
+  const row = Math.floor(index / 4);
+  const column = index % 4;
+
+  return (
+    CELL_STAGGER.base +
+    row * CELL_STAGGER.row +
+    column * CELL_STAGGER.column
+  );
+}
+
 function revealMosaic(mosaic) {
   const cells =
     mosaic.querySelectorAll(".cell");
@@ -264,99 +245,228 @@ function revealMosaic(mosaic) {
   const ordered =
     getVisualOrder(cells);
 
-  ordered.forEach(
-    (cell, index) => {
-      cell.style.animationDelay =
-        `${cellStaggerMs(index)}ms`;
+  ordered.forEach((cell, index) => {
+    cell.style.animationDelay =
+      `${getCellStagger(index)}ms`;
 
-      cell.classList.add(
-        "is-visible"
-      );
-    }
+    cell.classList.add("is-visible");
+  });
+
+  return ordered;
+}
+
+function getAnimationEndTime(cellCount) {
+  if (!cellCount) {
+    return 0;
+  }
+
+  const lastIndex =
+    cellCount - 1;
+
+  return (
+    getCellStagger(lastIndex) +
+    950
   );
+}
+
+function markHeroComplete() {
+  const hero =
+    document.getElementById("hero");
+
+  if (!hero) {
+    return;
+  }
+
+  hero.classList.add("is-complete");
+
+  updateScrollFade();
 }
 
 async function createMosaic() {
   const mosaic =
     document.getElementById("mosaic");
 
-  if (!mosaic) {
+  const hero =
+    document.getElementById("hero");
+
+  if (!mosaic || !hero) {
     return;
   }
 
-  const deck =
-    shuffle(PHOTOS);
+  hero.classList.remove("is-complete");
 
-  const requested =
-    deck.slice(
+  mosaic.innerHTML = "";
+
+  const photoNames =
+    await fetchPhotoList();
+
+  if (!photoNames.length) {
+    console.error(
+      "photos.json не содержит фотографий."
+    );
+
+    return;
+  }
+
+  const shuffled =
+    shuffle(photoNames);
+
+  const selected =
+    shuffled.slice(
       0,
       Math.min(
         VISIBLE_COUNT,
-        deck.length
+        shuffled.length
       )
     );
 
   const sources =
-    requested.map(photoUrl);
+    selected.map(photoUrl);
 
   const validSources =
     await preloadImages(sources);
 
   if (!validSources.length) {
+    console.error(
+      "Ни одна фотография не загрузилась."
+    );
+
     return;
   }
+
+  currentPhotos =
+    validSources.slice();
 
   const fragment =
     document.createDocumentFragment();
 
-  validSources.forEach(
-    (src, index) => {
-      const size =
-        randomTileType();
+  validSources.forEach((src) => {
+    const size =
+      randomTileType();
 
-      const cell =
-        createCell(
-          size,
-          index,
-          src
-        );
+    const cell =
+      createCell(
+        size,
+        src
+      );
 
-      fragment.appendChild(cell);
-    }
-  );
-
-  mosaic.innerHTML = "";
+    fragment.appendChild(cell);
+  });
 
   mosaic.appendChild(fragment);
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      revealMosaic(mosaic);
+      const cells =
+        revealMosaic(mosaic);
+
+      const animationDuration =
+        getAnimationEndTime(
+          cells.length
+        );
+
+      setTimeout(() => {
+        markHeroComplete();
+      }, animationDuration + 250);
     });
   });
 }
 
-function boot() {
-  const stage =
-    document.getElementById("stage");
+function updateScrollFade() {
+  const hero =
+    document.getElementById("hero");
+
+  const fade =
+    document.getElementById("heroBottomFade");
+
+  if (!hero || !fade) {
+    return;
+  }
+
+  if (
+    !hero.classList.contains(
+      "is-complete"
+    )
+  ) {
+    fade.style.opacity = "0";
+    return;
+  }
+
+  const heroHeight =
+    hero.offsetHeight;
+
+  const scrollY =
+    window.scrollY;
+
+  const fadeDistance =
+    Math.min(
+      heroHeight * 0.45,
+      500
+    );
+
+  const progress =
+    Math.min(
+      1,
+      Math.max(
+        0,
+        scrollY / fadeDistance
+      )
+    );
+
+  const opacity =
+    1 - progress;
+
+  fade.style.opacity =
+    opacity.toString();
+
+  fade.style.transform =
+    `translateY(${progress * 25}px)`;
+}
+
+function handleResize() {
+  clearTimeout(resizeTimer);
+
+  resizeTimer = setTimeout(() => {
+    if (!currentPhotos.length) {
+      return;
+    }
+
+    createMosaic();
+  }, 250);
+}
+
+async function boot() {
+  const hero =
+    document.getElementById("hero");
 
   const mosaic =
     document.getElementById("mosaic");
 
-  if (!stage || !mosaic) {
+  if (!hero || !mosaic) {
     return;
   }
 
-  mosaic.innerHTML = "";
-
-  requestAnimationFrame(() => {
-    stage.classList.add("is-play");
+  await new Promise((resolve) => {
+    requestAnimationFrame(resolve);
   });
 
   setTimeout(() => {
     createMosaic();
-  }, TEXT_ANIMATION_END + MOSAIC_START_DELAY);
+  }, MOSAIC_START_DELAY);
 }
+
+window.addEventListener(
+  "scroll",
+  updateScrollFade,
+  {
+    passive: true
+  }
+);
+
+window.addEventListener(
+  "resize",
+  handleResize
+);
 
 if (
   document.readyState === "loading"
@@ -364,7 +474,9 @@ if (
   document.addEventListener(
     "DOMContentLoaded",
     boot,
-    { once: true }
+    {
+      once: true
+    }
   );
 } else {
   boot();
